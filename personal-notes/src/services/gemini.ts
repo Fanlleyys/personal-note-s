@@ -5,9 +5,9 @@ const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
 
 const genAI = new GoogleGenerativeAI(API_KEY);
 
-// Use Gemini 3.0 Flash for fast responses
+// Use Gemini 3 Flash Preview - latest available model
 const model = genAI.getGenerativeModel({
-    model: 'gemini-3.0-flash',
+    model: 'gemini-3-flash-preview',
     generationConfig: {
         temperature: 0.7,
         topP: 0.95,

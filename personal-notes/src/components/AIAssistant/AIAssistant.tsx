@@ -2,10 +2,10 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Bot, User, Loader2, Sparkles } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { useData } from '../../context/DataContext';
 import { sendMessage } from '../../services/gemini';
 import type { AIResponse } from '../../services/gemini';
-import { addEvent, subscribeToEvents, subscribeToPasswords, addPassword, getPasswordsBySearch } from '../../services/firebase';
-import type { CalendarEvent, PasswordEntry } from '../../services/firebase';
+import { addEvent, addPassword, getPasswordsBySearch } from '../../services/firebase';
 import { encrypt, decrypt } from '../../services/encryption';
 import './AIAssistant.css';
 
@@ -19,35 +19,45 @@ interface ChatMessage {
 const AIAssistant = () => {
     const { user, encryptionKey } = useAuth();
     const { showToast } = useToast();
+    const { events, passwords } = useData();
 
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    // Load messages from localStorage on mount
+    const [messages, setMessages] = useState<ChatMessage[]>(() => {
+        if (!user) return [];
+        const saved = localStorage.getItem(`ai_chat_${user.uid}`);
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                // Convert timestamp strings back to Date objects
+                return parsed.map((m: ChatMessage) => ({
+                    ...m,
+                    timestamp: new Date(m.timestamp)
+                }));
+            } catch {
+                return [];
+            }
+        }
+        return [];
+    });
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [events, setEvents] = useState<CalendarEvent[]>([]);
-    const [passwords, setPasswords] = useState<PasswordEntry[]>([]);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    // Subscribe to events and passwords for context
+    // Save messages to localStorage when they change
     useEffect(() => {
-        if (!user) return;
-
-        const unsubEvents = subscribeToEvents(user.uid, setEvents);
-        const unsubPasswords = subscribeToPasswords(user.uid, setPasswords);
-
-        return () => {
-            unsubEvents();
-            unsubPasswords();
-        };
-    }, [user]);
+        if (user && messages.length > 0) {
+            localStorage.setItem(`ai_chat_${user.uid}`, JSON.stringify(messages));
+        }
+    }, [messages, user]);
 
     // Scroll to bottom on new messages
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    // Add welcome message
+    // Add welcome message only if no saved messages
     useEffect(() => {
         if (messages.length === 0) {
             setMessages([{

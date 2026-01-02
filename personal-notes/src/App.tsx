@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, NavLink } from 'react-router-do
 import { CalendarDays, Key, MessageCircle, Link2, LogOut, User } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
+import { DataProvider } from './context/DataContext';
 import './App.css';
 
 // Lazy load pages for better performance
@@ -112,7 +113,9 @@ function App() {
                 path="/*"
                 element={
                   <ProtectedRoute>
-                    <AppLayout />
+                    <DataProvider>
+                      <AppLayout />
+                    </DataProvider>
                   </ProtectedRoute>
                 }
               />

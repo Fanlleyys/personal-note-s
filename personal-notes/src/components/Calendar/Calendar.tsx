@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import {
     format,
     startOfMonth,
@@ -16,36 +16,24 @@ import { id } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Plus, X, Bell, Trash2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { addEvent, updateEvent, deleteEvent, subscribeToEvents } from '../../services/firebase';
+import { useData } from '../../context/DataContext';
+import { addEvent, updateEvent, deleteEvent } from '../../services/firebase';
 import type { CalendarEvent } from '../../services/firebase';
 import './Calendar.css';
 
 const Calendar = () => {
     const { user } = useAuth();
     const { showToast } = useToast();
+    const { events, eventsLoading: loading } = useData();
     const [currentMonth, setCurrentMonth] = useState(new Date());
-    const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [showModal, setShowModal] = useState(false);
     const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
-    const [loading, setLoading] = useState(true);
 
     // Form states
     const [eventTitle, setEventTitle] = useState('');
     const [eventDescription, setEventDescription] = useState('');
     const [eventReminder, setEventReminder] = useState(true);
-
-    // Subscribe to events
-    useEffect(() => {
-        if (!user) return;
-
-        const unsubscribe = subscribeToEvents(user.uid, (fetchedEvents) => {
-            setEvents(fetchedEvents);
-            setLoading(false);
-        });
-
-        return () => unsubscribe();
-    }, [user]);
 
     // Generate calendar days
     const generateCalendarDays = useCallback(() => {

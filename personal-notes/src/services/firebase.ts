@@ -11,7 +11,6 @@ import {
   getDocs,
   query,
   where,
-  orderBy,
   Timestamp,
   onSnapshot
 } from 'firebase/firestore';
@@ -126,8 +125,7 @@ export const subscribeToEvents = (
 ) => {
   const q = query(
     collection(db, 'events'),
-    where('userId', '==', userId),
-    orderBy('date', 'asc')
+    where('userId', '==', userId)
   );
 
   return onSnapshot(q, (snapshot) => {
@@ -137,6 +135,8 @@ export const subscribeToEvents = (
       date: doc.data().date.toDate(),
       createdAt: doc.data().createdAt?.toDate()
     })) as CalendarEvent[];
+    // Sort on client-side to avoid index requirement
+    events.sort((a, b) => a.date.getTime() - b.date.getTime());
     callback(events);
   });
 };
@@ -184,8 +184,7 @@ export const subscribeToPasswords = (
 ) => {
   const q = query(
     collection(db, 'passwords'),
-    where('userId', '==', userId),
-    orderBy('createdAt', 'desc')
+    where('userId', '==', userId)
   );
 
   return onSnapshot(q, (snapshot) => {
@@ -195,6 +194,8 @@ export const subscribeToPasswords = (
       createdAt: doc.data().createdAt?.toDate(),
       updatedAt: doc.data().updatedAt?.toDate()
     })) as PasswordEntry[];
+    // Sort on client-side to avoid index requirement
+    passwords.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
     callback(passwords);
   });
 };

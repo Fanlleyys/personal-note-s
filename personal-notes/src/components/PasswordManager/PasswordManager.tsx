@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { Search, Plus, Eye, EyeOff, Copy, Trash2, X, Key, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { addPassword, updatePassword, deletePassword, subscribeToPasswords } from '../../services/firebase';
+import { useData } from '../../context/DataContext';
+import { addPassword, updatePassword, deletePassword } from '../../services/firebase';
 import type { PasswordEntry } from '../../services/firebase';
 import { encrypt, decrypt, generatePassword } from '../../services/encryption';
 import './PasswordManager.css';
@@ -10,12 +11,11 @@ import './PasswordManager.css';
 const PasswordManager = () => {
     const { user, encryptionKey } = useAuth();
     const { showToast } = useToast();
-    const [passwords, setPasswords] = useState<PasswordEntry[]>([]);
+    const { passwords, passwordsLoading: loading } = useData();
     const [filteredPasswords, setFilteredPasswords] = useState<PasswordEntry[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [editingPassword, setEditingPassword] = useState<PasswordEntry | null>(null);
-    const [loading, setLoading] = useState(true);
     const [visiblePasswords, setVisiblePasswords] = useState<Set<string>>(new Set());
     const [formTitle, setFormTitle] = useState('');
     const [formUsername, setFormUsername] = useState('');
@@ -23,12 +23,6 @@ const PasswordManager = () => {
     const [formCategory, setFormCategory] = useState('');
     const [formNotes, setFormNotes] = useState('');
     const [showFormPassword, setShowFormPassword] = useState(false);
-
-    useEffect(() => {
-        if (!user) return;
-        const unsubscribe = subscribeToPasswords(user.uid, (fetched) => { setPasswords(fetched); setLoading(false); });
-        return () => unsubscribe();
-    }, [user]);
 
     useEffect(() => {
         if (!searchTerm.trim()) { setFilteredPasswords(passwords); }
